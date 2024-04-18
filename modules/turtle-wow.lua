@@ -85,32 +85,6 @@ pfUI:RegisterModule("turtle-wow", "vanilla", function ()
       end
     end
 
-    -- refresh paladin judgements on holy strike
-    -- taken from: https://github.com/doorknob6/pfUI-turtle/blob/master/modules/debuffs.lua
-    HookScript(libdebuff, "OnEvent", function()
-      if event == "CHAT_MSG_SPELL_SELF_DAMAGE" then
-        local spell = string.find(string.sub(arg1,6,17), "Holy Strike")
-
-        --arg2 is holy dmg when it hits, nil when it misses
-        if spell and arg2 then
-          for seal in L["judgements"] do
-            local name = UnitName("target")
-            local level = UnitLevel("target")
-            if name and libdebuff.objects[name] then
-              if level and
-                libdebuff.objects[name][level] and
-                libdebuff.objects[name][level][seal] then
-                libdebuff:AddEffect(name, level, seal)
-              elseif libdebuff.objects[name][0] and
-                libdebuff.objects[name][0][seal] then
-                libdebuff:AddEffect(name, 0, seal)
-              end
-            end
-          end
-        end
-      end
-    end)
-
     -- skin title dropdown menu
     -- taken from: https://github.com/doorknob6/pfUI-turtle/blob/master/skins/turtle/character.lua
     if TWTitles and pfUI_config["disabled"]["skin_Character"] ~= "1" then

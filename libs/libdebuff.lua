@@ -32,6 +32,7 @@ local _, class = UnitClass("player")
 libdebuff.objects = {}
 
 libdebuff:RegisterEvent("UNIT_CASTEVENT")
+libdebuff:RegisterEvent("PLAYER_REGEN_ENABLED")
 
 function libdebuff:GetDuration(effect, rank)
 	if L["debuffs"][effect] then
@@ -87,12 +88,9 @@ function libdebuff:GetMaxRank(effect)
 end
 
 function libdebuff:AddEffect(guid, effect, duration)
-	if not guid or not effect then
+	if not guid or not effect or guid == "0x0000000000000000" then
 		return
 	end
-	print("AddEffect")
-
-	local guid = string.lower(guid)
 
 	effect = string.gsub(effect, " %(%d+%)", "") -- remove stack indication from effect name in order to display correct expiration time for things like Fire Vulnerability
 	if not libdebuff.objects[guid] then
@@ -107,7 +105,6 @@ function libdebuff:AddEffect(guid, effect, duration)
 	libdebuff.objects[guid][effect].start = GetTime()
 	libdebuff.objects[guid][effect].duration = duration or libdebuff:GetDuration(effect)
 
-	print(guid .. " adding effect: " .. effect .. " with duration: " .. libdebuff.objects[guid][effect].duration)
 	if pfUI.uf and pfUI.uf.target then
 		pfUI.uf:RefreshUnit(pfUI.uf.target, "aura")
 	end
@@ -115,70 +112,53 @@ end
 
 -- Added "UNIT_CASTEVENT" event that tracks units cast starts, finishes, interrupts, channels, and swings (differentiates mainhand & offhand) arg1: casterGUID. arg2: targetGUID. arg3: event type ("START", "CAST", "FAIL", "CHANNEL", "MAINHAND", "OFFHAND"). arg4: spell id. arg5: cast duration.
 libdebuff:SetScript("OnEvent", function()
-	local casterGUID, targetGUID, eventType, spellID, castDuration = arg1, arg2, arg3, arg4, arg5
-	if eventType == "CAST" and targetGUID then
-		local effect, rank, _ = SpellInfo(spellID, BOOKTYPE_SPELL)
-		if effect then
-			local duration = libdebuff:GetDuration(effect, rank)
-			libdebuff:AddEffect(targetGUID, effect, duration)
+	if event == "UNIT_CASTEVENT" then
+		local casterGUID, targetGUID, eventType, spellID, castDuration = arg1, arg2, arg3, arg4, arg5
+		if eventType == "CAST" and targetGUID and string.len(targetGUID) > 0 then
+			local effect, rank, _ = SpellInfo(spellID, BOOKTYPE_SPELL)
+			if effect then
+				local duration = libdebuff:GetDuration(effect, rank)
+				libdebuff:AddEffect(targetGUID, effect, duration)
+			end
 		end
+	elseif event == "PLAYER_REGEN_ENABLED" then
+		libdebuff.objects = {} -- clear all debuffs
 	end
 end)
 
-function libdebuff:UnitDebuff(unit, id)
-	local _, guid = UnitExists(unit)
-	if guid then guid = string.lower(guid) end
-	local texture, stacks, dtype = UnitDebuff(unit, id)
-	local duration, timeleft = nil, -1
-	local rank = nil -- no backport
-	local effect
-
-	if texture then
-		scanner:SetUnitDebuff(unit, id)
-		effect = scanner:Line(1) or ""
-	end
-
-	if libdebuff.objects[guid] and libdebuff.objects[guid][effect] then
-		-- clean up cache
-		if libdebuff.objects[guid][effect].duration and libdebuff.objects[guid][effect].duration + libdebuff.objects[guid][effect].start < GetTime() then
-			libdebuff.objects[guid][effect] = nil
-		else
-			duration = libdebuff.objects[guid][effect].duration
-			timeleft = duration + libdebuff.objects[guid][effect].start - GetTime()
-		end
-	end
-
-	return effect, rank, texture, stacks, dtype, duration, timeleft
-end
-
-function libdebuff:GuidDebuff(guid, id)
-	if guid == "0x0000000000000000" then
+function libdebuff:UnitDebuff(unitstr, id)
+	if unitstr == "0x0000000000000000" then
 		return
 	end
 
-	local texture, stacks, dtype = UnitDebuff(guid, id)
+	local texture, stacks, dtype = UnitDebuff(unitstr, id) -- this corrupts guid
+
 	local duration, timeleft = nil, -1
 	local rank = nil -- no backport
 	local effect
 
 	if texture then
-		scanner:SetUnitDebuff(guid, id)
-		effect = scanner:Line(1) or ""
-	end
+		scanner:SetUnitDebuff(unitstr, id)
+		effect = scanner:Line(1)
 
-	if libdebuff.objects[guid] then
-		print("guid exists " .. guid)
-	end
-	if libdebuff.objects[guid] and libdebuff.objects[guid][effect] then
-		print("effect exists " .. effect)
-		-- clean up cache
-		if libdebuff.objects[guid][effect].duration and libdebuff.objects[guid][effect].duration + libdebuff.objects[guid][effect].start < GetTime() then
-			--libdebuff.objects[guid][effect] = nil
-		else
-			duration = libdebuff.objects[guid][effect].duration
-			timeleft = duration + libdebuff.objects[guid][effect].start - GetTime()
+		if effect then
+			local _, guid = UnitExists(unitstr) -- restore guid
+
+			if libdebuff.objects[guid] and libdebuff.objects[guid][effect] then
+				duration = libdebuff.objects[guid][effect].duration
+				timeleft = duration + libdebuff.objects[guid][effect].start - GetTime()
+				if timeleft < 0 then
+					timeleft = nil
+				end
+			else
+				-- add debuff timer (could have been from aoe spell that didn't have a target)
+				duration = libdebuff:GetDuration(effect)
+				timeleft = duration
+				libdebuff:AddEffect(guid, effect, duration)
+			end
 		end
 	end
+
 	return effect, rank, texture, stacks, dtype, duration, timeleft
 end
 

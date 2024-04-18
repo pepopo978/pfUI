@@ -137,8 +137,8 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
 
   local function PlateCacheDebuffs(self, guid, verify)
     if not self.debuffcache then self.debuffcache = {} end
+    print("cache" .. guid)
 
-    print("cache deb")
     for id = 1, 24 do
       local effect, _, texture, stacks, _, duration, timeleft = libdebuff:UnitDebuff(guid, id)
       if effect and timeleft then
@@ -501,7 +501,7 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
     local unittype = GetUnitType(red, green, blue) or "ENEMY_NPC"
     local font_size = C.nameplates.use_unitfonts == "1" and C.global.font_unit_size or C.global.font_size
 
-    local guid = plate.guid
+    local guid = string.upper(plate.guid)
 
     -- ignore players with npc names if plate level is lower than player level
     if ulevel and ulevel > (level == "??" and -1 or level) then player = nil end
@@ -684,11 +684,6 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
         end
 
         if effect and texture and DebuffFilter(effect) then
-          if math.random(1,1000) > 999 then
-            print(guid .. " " .. timeleft)
-          elseif timeleft > 0 then
-            print(guid .. " " .. timeleft)
-          end
           if not plate.debuffs[index] then
             CreateDebuffIcon(plate, index)
             UpdateDebuffConfig(plate, index)
@@ -706,7 +701,6 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
           end
 
           if duration and timeleft and debuffdurations then
-            print("effect " .. effect .. " " .. timeleft)
             plate.debuffs[index].cd:SetAlpha(0)
             plate.debuffs[index].cd:Show()
             CooldownFrame_SetTimer(plate.debuffs[index].cd, GetTime() + timeleft - duration, duration, 1)

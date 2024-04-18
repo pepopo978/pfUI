@@ -135,11 +135,12 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
     end
   end
 
-  local function PlateCacheDebuffs(self, unitstr, verify)
+  local function PlateCacheDebuffs(self, guid, verify)
     if not self.debuffcache then self.debuffcache = {} end
 
-    for id = 1, 16 do
-      local effect, _, texture, stacks, _, duration, timeleft = libdebuff:UnitDebuff(unitstr, id)
+    print("cache deb")
+    for id = 1, 24 do
+      local effect, _, texture, stacks, _, duration, timeleft = libdebuff:GuidDebuff(guid, id)
       if effect and timeleft then
         local start = GetTime() - ( (duration or 0) - ( timeleft or 0) )
         local stop = GetTime() + ( timeleft or 0 )
@@ -271,6 +272,7 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
     nameplate.UnitDebuff = PlateUnitDebuff
     nameplate.CacheDebuffs = PlateCacheDebuffs
     nameplate.original = {}
+    nameplate.guid = tonumber(frame:GetName(1))
 
     -- create shortcuts for all known elements and disable them
     nameplate.original.healthbar, nameplate.original.castbar = parent:GetChildren()
@@ -448,7 +450,7 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
     nameplate.raidicon:SetWidth(C.nameplates.raidiconsize)
     nameplate.raidicon:SetHeight(C.nameplates.raidiconsize)
 
-    for i=1,16 do
+    for i=1,24 do
       UpdateDebuffConfig(nameplate, i)
     end
 
@@ -499,6 +501,8 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
     local unittype = GetUnitType(red, green, blue) or "ENEMY_NPC"
     local font_size = C.nameplates.use_unitfonts == "1" and C.global.font_unit_size or C.global.font_size
 
+    local guid = plate.guid
+
     -- ignore players with npc names if plate level is lower than player level
     if ulevel and ulevel > (level == "??" and -1 or level) then player = nil end
 
@@ -508,14 +512,8 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
       plate.cache.player = nil
     end
 
-    -- read and cache unittype
-    if plate.cache.player then
-      -- overwrite unittype from cache if existing
-      player = plate.cache.player == "PLAYER" and true or nil
-    elseif unitstr then
-      -- read unit type while unitstr is set
-      plate.cache.player = UnitIsPlayer(unitstr) and "PLAYER" or "NPC"
-    end
+    -- read unit type while unitstr is set
+    plate.cache.player = UnitIsPlayer(guid) and "PLAYER" or "NPC"
 
     if player and unittype == "ENEMY_NPC" then unittype = "ENEMY_PLAYER" end
     elite = plate.original.levelicon:IsShown() and not player and "boss" or elite
@@ -523,13 +521,6 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
 
     -- skip data updates on invisible frames
     if not visible then return end
-
-    -- target event sometimes fires too quickly, where nameplate identifiers are not
-    -- yet updated. So while being inside this event, we cannot trust the unitstr.
-    if event == "PLAYER_TARGET_CHANGED" then unitstr = nil end
-
-    -- remove unitstr on unit name mismatch
-    if unitstr and UnitName(unitstr) ~= name then unitstr = nil end
 
     -- use mobhealth values if addon is running
     if (MobHealth3 or MobHealthFrame) and target and name == UnitName('target') and MobHealth_GetTargetCurHP() then
@@ -679,20 +670,25 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
       local verify = string.format("%s:%s", (name or ""), (level or ""))
 
       -- update cached debuffs
-      if C.nameplates["guessdebuffs"] == "1" and unitstr then
-        plate:CacheDebuffs(unitstr, verify)
-      end
+      --if C.nameplates["guessdebuffs"] == "1" and unitstr then
+      --  plate:CacheDebuffs(unitstr, verify)
+      --end
 
       -- update all debuff icons
-      for i = 1, 16 do
+      for i = 1, 24 do
         local effect, rank, texture, stacks, dtype, duration, timeleft
-        if unitstr then
-          effect, rank, texture, stacks, dtype, duration, timeleft = libdebuff:UnitDebuff(unitstr, i)
+        if guid and guid ~= "0x0000000000000000" then
+          effect, rank, texture, stacks, dtype, duration, timeleft = libdebuff:GuidDebuff(guid, i)
         elseif plate.verify == verify then
           effect, rank, texture, stacks, dtype, duration, timeleft = plate:UnitDebuff(i)
         end
 
         if effect and texture and DebuffFilter(effect) then
+          if math.random(1,1000) > 999 then
+            print(guid .. " " .. timeleft)
+          elseif timeleft > 0 then
+            print(guid .. " " .. timeleft)
+          end
           if not plate.debuffs[index] then
             CreateDebuffIcon(plate, index)
             UpdateDebuffConfig(plate, index)
@@ -710,18 +706,21 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
           end
 
           if duration and timeleft and debuffdurations then
+            print("effect " .. effect .. " " .. timeleft)
             plate.debuffs[index].cd:SetAlpha(0)
             plate.debuffs[index].cd:Show()
             CooldownFrame_SetTimer(plate.debuffs[index].cd, GetTime() + timeleft - duration, duration, 1)
           end
 
           index = index + 1
+        elseif not effect then
+          break
         end
       end
     end
 
     -- hide remaining debuffs
-    for i = index, 16 do
+    for i = index, 24 do
       if plate.debuffs[i] then
         plate.debuffs[i]:Hide()
       end
@@ -731,6 +730,7 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
   nameplates.OnShow = function(frame)
     local frame = frame or this
     local nameplate = frame.nameplate
+    nameplate.guid = tonumber(frame:GetName(1))
 
     nameplates:OnDataChanged(nameplate)
   end
@@ -743,6 +743,7 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
     local name = original.name:GetText()
     local target = UnitExists("target") and frame:GetAlpha() == 1 or nil
     local mouseover = UnitExists("mouseover") and original.glow:IsShown() or nil
+    nameplate.guid = tonumber(frame:GetName(1))
 
     -- trigger queued event update
     if nameplate.eventcache then

@@ -1673,7 +1673,7 @@ function pfUI.uf:RefreshUnit(unit, component)
 
         indicator[debuff].visible = nil
 
-        for i=1,16 do
+        for i=1,24 do
           local _, _, dtype = UnitDebuff(unitstr, i)
           if dtype == debuff then
             indicator[debuff].visible = true

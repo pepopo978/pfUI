@@ -240,7 +240,7 @@ pfUI:RegisterModule("buff", "vanilla:tbc", function ()
       RefreshBuffButton(pfUI.buff.buffs.buttons[i])
     end
 
-    for i=1,16 do
+    for i=1,24 do
       RefreshBuffButton(pfUI.buff.debuffs.buttons[i])
     end
 
@@ -269,7 +269,7 @@ pfUI:RegisterModule("buff", "vanilla:tbc", function ()
   -- Debuffs
   pfUI.buff.debuffs = CreateFrame("Frame", "pfDebuffFrame", UIParent)
   pfUI.buff.debuffs.buttons = {}
-  for i=1,16 do
+  for i=1,24 do
     pfUI.buff.debuffs.buttons[i] = CreateBuffButton(i, "HARMFUL")
   end
 
@@ -343,7 +343,7 @@ pfUI:RegisterModule("buff", "vanilla:tbc", function ()
       pfUI.buff:UpdateConfigBuffButton(pfUI.buff.buffs.buttons[i])
     end
 
-    for i=1,16 do
+    for i=1,24 do
       pfUI.buff:UpdateConfigBuffButton(pfUI.buff.debuffs.buttons[i])
     end
 

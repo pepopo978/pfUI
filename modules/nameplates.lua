@@ -137,7 +137,6 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
 
   local function PlateCacheDebuffs(self, guid, verify)
     if not self.debuffcache then self.debuffcache = {} end
-    print("cache" .. guid)
 
     for id = 1, 24 do
       local effect, _, texture, stacks, _, duration, timeleft = libdebuff:UnitDebuff(guid, id)

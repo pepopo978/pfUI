@@ -140,7 +140,7 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
 
     print("cache deb")
     for id = 1, 24 do
-      local effect, _, texture, stacks, _, duration, timeleft = libdebuff:GuidDebuff(guid, id)
+      local effect, _, texture, stacks, _, duration, timeleft = libdebuff:UnitDebuff(guid, id)
       if effect and timeleft then
         local start = GetTime() - ( (duration or 0) - ( timeleft or 0) )
         local stop = GetTime() + ( timeleft or 0 )
@@ -272,7 +272,7 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
     nameplate.UnitDebuff = PlateUnitDebuff
     nameplate.CacheDebuffs = PlateCacheDebuffs
     nameplate.original = {}
-    nameplate.guid = tonumber(frame:GetName(1))
+    nameplate.guid = frame:GetName(1)
 
     -- create shortcuts for all known elements and disable them
     nameplate.original.healthbar, nameplate.original.castbar = parent:GetChildren()
@@ -678,7 +678,7 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
       for i = 1, 24 do
         local effect, rank, texture, stacks, dtype, duration, timeleft
         if guid and guid ~= "0x0000000000000000" then
-          effect, rank, texture, stacks, dtype, duration, timeleft = libdebuff:GuidDebuff(guid, i)
+          effect, rank, texture, stacks, dtype, duration, timeleft = libdebuff:UnitDebuff(guid, i)
         elseif plate.verify == verify then
           effect, rank, texture, stacks, dtype, duration, timeleft = plate:UnitDebuff(i)
         end
@@ -730,7 +730,7 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
   nameplates.OnShow = function(frame)
     local frame = frame or this
     local nameplate = frame.nameplate
-    nameplate.guid = tonumber(frame:GetName(1))
+    nameplate.guid = frame:GetName(1)
 
     nameplates:OnDataChanged(nameplate)
   end
@@ -743,7 +743,7 @@ pfUI:RegisterModule("nameplates", "vanilla:tbc", function ()
     local name = original.name:GetText()
     local target = UnitExists("target") and frame:GetAlpha() == 1 or nil
     local mouseover = UnitExists("mouseover") and original.glow:IsShown() or nil
-    nameplate.guid = tonumber(frame:GetName(1))
+    nameplate.guid = frame:GetName(1)
 
     -- trigger queued event update
     if nameplate.eventcache then

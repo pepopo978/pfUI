@@ -92,6 +92,8 @@ function libdebuff:AddEffect(guid, effect, duration)
 	end
 	print("AddEffect")
 
+	local guid = string.lower(guid)
+
 	effect = string.gsub(effect, " %(%d+%)", "") -- remove stack indication from effect name in order to display correct expiration time for things like Fire Vulnerability
 	if not libdebuff.objects[guid] then
 		libdebuff.objects[guid] = {}
@@ -118,13 +120,14 @@ libdebuff:SetScript("OnEvent", function()
 		local effect, rank, _ = SpellInfo(spellID, BOOKTYPE_SPELL)
 		if effect then
 			local duration = libdebuff:GetDuration(effect, rank)
-			libdebuff:AddEffect(tonumber(targetGUID), effect, duration)
+			libdebuff:AddEffect(targetGUID, effect, duration)
 		end
 	end
 end)
 
 function libdebuff:UnitDebuff(unit, id)
 	local _, guid = UnitExists(unit)
+	if guid then guid = string.lower(guid) end
 	local texture, stacks, dtype = UnitDebuff(unit, id)
 	local duration, timeleft = nil, -1
 	local rank = nil -- no backport
@@ -134,16 +137,16 @@ function libdebuff:UnitDebuff(unit, id)
 		scanner:SetUnitDebuff(unit, id)
 		effect = scanner:Line(1) or ""
 	end
-	--
-	--if libdebuff.objects[guid] and libdebuff.objects[guid][effect] then
-	--	-- clean up cache
-	--	if libdebuff.objects[guid][effect].duration and libdebuff.objects[guid][effect].duration + libdebuff.objects[guid][effect].start < GetTime() then
-	--		libdebuff.objects[guid][effect] = nil
-	--	else
-	--		duration = libdebuff.objects[guid][effect].duration
-	--		timeleft = duration + libdebuff.objects[guid][effect].start - GetTime()
-	--	end
-	--end
+
+	if libdebuff.objects[guid] and libdebuff.objects[guid][effect] then
+		-- clean up cache
+		if libdebuff.objects[guid][effect].duration and libdebuff.objects[guid][effect].duration + libdebuff.objects[guid][effect].start < GetTime() then
+			libdebuff.objects[guid][effect] = nil
+		else
+			duration = libdebuff.objects[guid][effect].duration
+			timeleft = duration + libdebuff.objects[guid][effect].start - GetTime()
+		end
+	end
 
 	return effect, rank, texture, stacks, dtype, duration, timeleft
 end

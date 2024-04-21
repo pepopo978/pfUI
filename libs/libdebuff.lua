@@ -92,6 +92,8 @@ function libdebuff:AddEffect(guid, effect, duration)
 		return
 	end
 
+	guid = string.lower(guid)
+
 	effect = string.gsub(effect, " %(%d+%)", "") -- remove stack indication from effect name in order to display correct expiration time for things like Fire Vulnerability
 	if not libdebuff.objects[guid] then
 		libdebuff.objects[guid] = {}
@@ -142,7 +144,11 @@ function libdebuff:UnitDebuff(unitstr, id)
 		effect = scanner:Line(1)
 
 		if effect then
-			local _, guid = UnitExists(unitstr) -- restore guid
+			local guid = string.lower(unitstr)
+			if string.sub(unitstr, 1, 2) ~= "0x" then
+				_, guid = UnitExists(unitstr) -- get guid
+				guid = string.lower(guid)
+			end
 
 			if libdebuff.objects[guid] and libdebuff.objects[guid][effect] then
 				duration = libdebuff.objects[guid][effect].duration

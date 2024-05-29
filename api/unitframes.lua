@@ -3,6 +3,7 @@ setfenv(1, pfUI:GetEnvironment())
 
 pfUI.uf = CreateFrame("Frame", nil, UIParent)
 pfUI.uf:SetScript("OnUpdate", function()
+  if ( this.tick or 1) > GetTime() then return else this.tick = GetTime() + .1 end
   if InCombatLockdown and not InCombatLockdown() then
     for frame in pairs(pfUI.uf.delayed) do
       frame:UpdateVisibility()
@@ -909,6 +910,8 @@ function pfUI.uf.OnEvent()
 end
 
 function pfUI.uf.OnUpdate()
+  if ( this.tick or 1) > GetTime() then return else this.tick = GetTime() + .2 end
+
   -- update combat feedback
   if this.feedbackText then CombatFeedback_OnUpdate(arg1) end
 

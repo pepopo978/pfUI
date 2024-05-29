@@ -4,6 +4,9 @@ pfUI:RegisterModule("superwow", "vanilla", function ()
   local unitcast = CreateFrame("Frame")
   unitcast:RegisterEvent("UNIT_CASTEVENT")
   unitcast:SetScript("OnEvent", function()
+    -- ignore cast events for non-enemy units
+    if not UnitIsEnemy("player", arg1) then
+    end
     if arg3 == "START" or arg3 == "CAST" or arg3 == "CHANNEL" then
       -- human readable argument list
       local guid = arg1

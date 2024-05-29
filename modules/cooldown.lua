@@ -8,6 +8,10 @@ pfUI:RegisterModule("cooldown", "vanilla:tbc", function ()
 
   local parent
   local function pfCooldownOnUpdate()
+    if not this.next then this.next = GetTime() + .1 end
+    if this.next > GetTime() then return end
+    this.next = GetTime() + .1
+
     parent = this:GetParent()
     if not parent then this:Hide() end
 
@@ -17,10 +21,6 @@ pfUI:RegisterModule("cooldown", "vanilla:tbc", function ()
         this:Hide()
       end
     end
-
-    if not this.next then this.next = GetTime() + .1 end
-    if this.next > GetTime() then return end
-    this.next = GetTime() + .1
 
     -- fix own alpha value (should be inherited, but somehow isn't always)
     this:SetAlpha(parent:GetAlpha())

@@ -152,24 +152,27 @@ end
 libcast.db = { [player] = {} }
 
 -- environmental casts
-libcast:RegisterEvent("CHAT_MSG_SPELL_SELF_DAMAGE")
-libcast:RegisterEvent("CHAT_MSG_SPELL_HOSTILEPLAYER_DAMAGE")
-libcast:RegisterEvent("CHAT_MSG_SPELL_HOSTILEPLAYER_BUFF")
-libcast:RegisterEvent("CHAT_MSG_SPELL_FRIENDLYPLAYER_DAMAGE")
-libcast:RegisterEvent("CHAT_MSG_SPELL_FRIENDLYPLAYER_BUFF")
-libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_HOSTILEPLAYER_BUFFS")
-libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_FRIENDLYPLAYER_BUFFS")
-libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_HOSTILEPLAYER_DAMAGE")
-libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_FRIENDLYPLAYER_DAMAGE")
-libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_SELF_DAMAGE")
-libcast:RegisterEvent("CHAT_MSG_SPELL_PARTY_DAMAGE")
-libcast:RegisterEvent("CHAT_MSG_SPELL_PARTY_BUFF")
-libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_PARTY_DAMAGE")
-libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_PARTY_BUFFS")
-libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_CREATURE_DAMAGE")
-libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_CREATURE_BUFFS")
-libcast:RegisterEvent("CHAT_MSG_SPELL_CREATURE_VS_CREATURE_DAMAGE")
-libcast:RegisterEvent("CHAT_MSG_SPELL_CREATURE_VS_CREATURE_BUFF")
+--libcast:RegisterEvent("CHAT_MSG_SPELL_SELF_DAMAGE")
+--libcast:RegisterEvent("CHAT_MSG_SPELL_HOSTILEPLAYER_DAMAGE")
+--libcast:RegisterEvent("CHAT_MSG_SPELL_FRIENDLYPLAYER_DAMAGE")
+--libcast:RegisterEvent("CHAT_MSG_SPELL_PARTY_DAMAGE")
+--
+--libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_HOSTILEPLAYER_DAMAGE")
+--libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_FRIENDLYPLAYER_DAMAGE")
+--libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_SELF_DAMAGE")
+--libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_PARTY_DAMAGE")
+--libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_CREATURE_DAMAGE")
+--
+--libcast:RegisterEvent("CHAT_MSG_SPELL_HOSTILEPLAYER_BUFF")
+--libcast:RegisterEvent("CHAT_MSG_SPELL_FRIENDLYPLAYER_BUFF")
+--libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_HOSTILEPLAYER_BUFFS")
+--libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_FRIENDLYPLAYER_BUFFS")
+--libcast:RegisterEvent("CHAT_MSG_SPELL_PARTY_BUFF")
+--libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_PARTY_BUFFS")
+--libcast:RegisterEvent("CHAT_MSG_SPELL_PERIODIC_CREATURE_BUFFS")
+--
+--libcast:RegisterEvent("CHAT_MSG_SPELL_CREATURE_VS_CREATURE_DAMAGE")
+--libcast:RegisterEvent("CHAT_MSG_SPELL_CREATURE_VS_CREATURE_BUFF")
 
 -- player spells
 libcast:RegisterEvent("SPELLCAST_START")
@@ -239,47 +242,6 @@ libcast:SetScript("OnEvent", function()
     if this.db[player].cast then
       this.db[player].start = -this.db[player].casttime/1000 + GetTime() + arg1/1000
     end
-  -- Fill database with environmental casts
-  elseif arg1 then
-    -- (.+) begins to cast (.+).
-    mob, spell = cmatch(arg1, SPELLCASTOTHERSTART)
-    if libcast:AddAction(mob, spell) then return end
-
-    -- (.+) begins to perform (.+).
-    mob, spell = cmatch(arg1, SPELLPERFORMOTHERSTART)
-    if libcast:AddAction(mob, spell) then return end
-
-    -- (.+) gains (.+).
-    mob, spell = cmatch(arg1, AURAADDEDOTHERHELPFUL)
-    if libcast:RemoveAction(mob, spell) then return end
-
-    -- (.+) is afflicted by (.+).
-    mob, spell = cmatch(arg1, AURAADDEDOTHERHARMFUL)
-    if libcast:RemoveAction(mob, spell) then return end
-
-    -- Your (.+) hits (.+) for (%d+).
-    spell, mob = cmatch(arg1, SPELLLOGSELFOTHER)
-    if libcast:RemoveAction(mob, spell) then return end
-
-    -- Your (.+) crits (.+) for (%d+).
-    spell, mob = cmatch(arg1, SPELLLOGCRITSELFOTHER)
-    if libcast:RemoveAction(mob, spell) then return end
-
-    -- (.+)'s (.+) %a hits (.+) for (%d+).
-    _, spell, mob = cmatch(arg1, SPELLLOGOTHEROTHER)
-    if libcast:RemoveAction(mob, spell) then return end
-
-    -- (.+)'s (.+) %a crits (.+) for (%d+).
-    _, spell, mob = cmatch(arg1, SPELLLOGCRITOTHEROTHER)
-    if libcast:RemoveAction(mob, spell) then return end
-
-    -- You interrupt (.+)'s (.+).
-    mob, spell = cmatch(arg1, SPELLINTERRUPTSELFOTHER)
-    if libcast:RemoveAction(mob, spell) then return end
-
-    -- (.+) interrupts (.+)'s (.+).
-    _, mob, spell = cmatch(arg1, SPELLINTERRUPTOTHEROTHER)
-    if libcast:RemoveAction(mob, spell) then return end
   end
 end)
 

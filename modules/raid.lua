@@ -87,6 +87,8 @@ pfUI:RegisterModule("raid", "vanilla:tbc", function ()
   pfUI.uf.raid:RegisterEvent("VARIABLES_LOADED")
   pfUI.uf.raid:SetScript("OnEvent", function() this:Show() end)
   pfUI.uf.raid:SetScript("OnUpdate", function()
+    if ( this.tick or 1) > GetTime() then return else this.tick = GetTime() + .2 end
+
     -- don't proceed without raid or during combat
     if not UnitInRaid("player") or (InCombatLockdown and InCombatLockdown()) then return end
 

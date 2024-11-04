@@ -77,7 +77,7 @@ pfUI:RegisterModule("mouseover", "vanilla", function ()
       NoSelfCast(msg)
 
       -- set spell target to unitstring (or selfcast)
-      if SpellIsTargeting() then SpellTargetUnit(unitstr or "player") end
+      SpellTargetUnit(unitstr or "player")
 
       -- clean up spell target in error case
       if SpellIsTargeting() then SpellStopTargeting() end

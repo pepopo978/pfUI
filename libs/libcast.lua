@@ -242,6 +242,47 @@ libcast:SetScript("OnEvent", function()
     if this.db[player].cast then
       this.db[player].start = -this.db[player].casttime/1000 + GetTime() + arg1/1000
     end
+  -- Fill database with environmental casts
+  elseif arg1 then
+    -- (.+) begins to cast (.+).
+    mob, spell = cmatch(arg1, SPELLCASTOTHERSTART)
+    if libcast:AddAction(mob, spell) then return end
+
+    -- (.+) begins to perform (.+).
+    mob, spell = cmatch(arg1, SPELLPERFORMOTHERSTART)
+    if libcast:AddAction(mob, spell) then return end
+
+    -- (.+) gains (.+).
+    mob, spell = cmatch(arg1, AURAADDEDOTHERHELPFUL)
+    if libcast:RemoveAction(mob, spell) then return end
+
+    -- (.+) is afflicted by (.+).
+    mob, spell = cmatch(arg1, AURAADDEDOTHERHARMFUL)
+    if libcast:RemoveAction(mob, spell) then return end
+
+    -- Your (.+) hits (.+) for (%d+).
+    spell, mob = cmatch(arg1, SPELLLOGSELFOTHER)
+    if libcast:RemoveAction(mob, spell) then return end
+
+    -- Your (.+) crits (.+) for (%d+).
+    spell, mob = cmatch(arg1, SPELLLOGCRITSELFOTHER)
+    if libcast:RemoveAction(mob, spell) then return end
+
+    -- (.+)'s (.+) %a hits (.+) for (%d+).
+    _, spell, mob = cmatch(arg1, SPELLLOGOTHEROTHER)
+    if libcast:RemoveAction(mob, spell) then return end
+
+    -- (.+)'s (.+) %a crits (.+) for (%d+).
+    _, spell, mob = cmatch(arg1, SPELLLOGCRITOTHEROTHER)
+    if libcast:RemoveAction(mob, spell) then return end
+
+    -- You interrupt (.+)'s (.+).
+    mob, _ = cmatch(arg1, SPELLINTERRUPTSELFOTHER)
+    if libcast:RemoveAction(mob, "INTERRUPT") then return end
+
+    -- (.+) interrupts (.+)'s (.+).
+    _, mob, _ = cmatch(arg1, SPELLINTERRUPTOTHEROTHER)
+    if libcast:RemoveAction(mob, "INTERRUPT") then return end
   end
 end)
 
@@ -335,15 +376,18 @@ libcast.customcast[strlower(multishot)] = function(begin, duration)
   end
 end
 
-local function CastCustom(spell)
-  if not spell then return end
-  if not UnitCastingInfo(UnitName("player")) then
-    for custom, func in pairs(libcast.customcast) do
-      if strfind(strlower(spell), custom) or strlower(spell) == custom then
-        func(true)
-      end
-    end
-  end
+local function CastCustom(id, bookType, rawSpellName, rank, texture, castingTime)
+  if not id or not rawSpellName or not castingTime then return end -- ignore if the spell is not found or if it is instant-cast
+
+  lastrank = rank
+  lastcasttex = texture
+
+  local func = libcast.customcast[strlower(rawSpellName)]
+  if not func then return end
+
+  if GetSpellCooldown(id, bookType) == 0 or UnitCastingInfo(player) then return end -- detect casting
+
+  func(true)
 end
 
 hooksecurefunc("UseContainerItem", function(id, index)
@@ -351,36 +395,27 @@ hooksecurefunc("UseContainerItem", function(id, index)
 end)
 
 hooksecurefunc("CastSpell", function(id, bookType)
-  _, lastrank = libspell.GetSpellInfo(id, bookType)
-  lastcasttex = GetSpellTexture(id, bookType)
+  local cachedRawSpellName, cachedRank, cachedTexture, cachedCastingTime, _, _, cachedSpellId, cachedBookType = libspell.GetSpellInfo(id, bookType)
 
-  if GetSpellCooldown(id, bookType) ~= 0 then
-    local spellName = GetSpellName(id, bookType)
-    CastCustom(spellName)
-  end
+  CastCustom(cachedSpellId, cachedBookType, cachedRawSpellName, cachedRank, cachedTexture, cachedCastingTime)
 end, true)
 
-hooksecurefunc("CastSpellByName", function(spell, target)
-  _, lastrank = libspell.GetSpellInfo(spell)
+hooksecurefunc("CastSpellByName", function(spellCasted, target)
+  local cachedRawSpellName, cachedRank, cachedTexture, cachedCastingTime, _, _, cachedSpellId, cachedBookType = libspell.GetSpellInfo(spellCasted)
 
-  for i=1,120 do
-    -- detect if any cast is ongoing
-    if IsCurrentAction(i) then
-      CastCustom(spell)
-      return
-    end
-  end
+  CastCustom(cachedSpellId, cachedBookType, cachedRawSpellName, cachedRank, cachedTexture, cachedCastingTime)
 end, true)
 
 hooksecurefunc("UseAction", function(slot, target, button)
-  scanner:SetAction(slot)
-  local spellName, rank = scanner:Line(1)
-
-  lastcasttex = GetActionTexture(slot)
-  lastrank = rank
-
   if GetActionText(slot) or not IsCurrentAction(slot) then return end
-  CastCustom(spellName)
+  
+  scanner:SetAction(slot)
+  local rawSpellName, rank = scanner:Line(1)
+  if not rawSpellName then return end -- ignore if the spell is not found
+
+  local cachedRawSpellName, cachedRank, cachedTexture, cachedCastingTime, _, _, cachedSpellId, cachedBookType = libspell.GetSpellInfo(rawSpellName .. (rank and ("(" .. rank .. ")") or ""))
+
+  CastCustom(cachedSpellId, cachedBookType, cachedRawSpellName, cachedRank, cachedTexture, cachedCastingTime)
 end, true)
 
 -- add libcast to pfUI API
